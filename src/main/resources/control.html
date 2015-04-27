@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.6.0/pure-min.css">
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css"
+
+  <meta charset="utf-8"/>
+  <title>Darwin Remote Controller</title>
+
+  <style type="text/css">
+  body {
+    background-color: #FFFFFF;
+
+}
+
+button {
+    height: 100px;
+    width: 98%;
+    margin-bottom: 5px;
+}
+
+.button-warning {
+            background: rgb(223, 117, 20); /* this is an orange */
+        }
+
+
+</style>
+</head>
+<body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+
+function sendRequest(movement)
+{
+  var xmlHttp = null;
+    
+    $.get(
+    "http://hackaton.cloudhub.io/addMovement",
+    {name : movement,
+    	queueName: $("#queue").val()},
+    function(data) {
+       
+    }
+);
+}
+
+
+</script>
+
+
+<div  align="center">
+<h1> Darwin Remote </h1>
+<form class="pure-form">
+ <input placeholder="Queue name" id="queue" value="1"/>
+</form >
+<div class="pure-g">
+    <div class="pure-u-1-3"></div>
+    <div class="pure-u-1-3 some"><button onClick="sendRequest('Advance');" class="pure-button pure-button-primary"><h1>&#8613;</h1></button></div>
+    <div class="pure-u-1-3"></div>
+</div>
+<div class="pure-g">
+    <div class="pure-u-1-3"><button onClick="sendRequest('Left_Turn');" class="pure-button pure-button-primary"><h1>&#8634;</h1></button></div>
+    <div class="pure-u-1-3"></div>
+    <div class="pure-u-1-3"><button onClick="sendRequest('Right_Turn');" class="pure-button pure-button-primary"><h1>&#8635;</h1></button></div>
+</div>
+<div class="pure-g">
+    <div class="pure-u-1-3"></div>
+    <div class="pure-u-1-3"><button onClick="sendRequest('Reverse');" class="pure-button pure-button-primary"><h1>&#8615;</h1></button></div>
+    <div class="pure-u-1-3"></div>
+</div>
+
+<div class="pure-g">
+<div class="pure-u-1-5"><button onClick="sendRequest('left_kick');" class="pure-button button-warning">Left Kick</button></div>
+<div class="pure-u-1-5"><button onClick="sendRequest('right_kick');" class="pure-button button-warning">Right Kick</button></div>
+<div class="pure-u-1-5"><button onClick="sendRequest('horse_dance');" class="pure-button button-warning">Horse Dance</button></div>
+<div class="pure-u-1-5"><button onClick="sendRequest('right_hook');" class="pure-button button-warning">right_hook</button></div>
+<div class="pure-u-1-5"><button onClick="sendRequest('Greet1');" class="pure-button button-warning">Greet1</button></div>
+</div>
+
+</div>
+</body>
+</html>

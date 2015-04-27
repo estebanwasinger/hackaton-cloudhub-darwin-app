@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.1"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="${http.port}" doc:name="HTTP Listener Configuration"/>
+    <objectstore:config name="ObjectStore" doc:name="ObjectStore"/>
+    <http:request-config name="HTTP_Request_Configuration" host="hackaton.cloudhub.io" port="80" doc:name="HTTP Request Configuration"/>
+    <flow name="getQueue">
+        <objectstore:retrieve config-ref="ObjectStore" key="#[queueName]" doc:name="retrieveQueue"/>
+        <choice-exception-strategy doc:name="Choice Exception Strategy">
+            <catch-exception-strategy doc:name="Catch Exception Strategy">
+                <set-payload value="#[new java.util.LinkedList()]" doc:name="Set Payload"/>
+                <logger message="#['Created new queue: '+ queueName]" level="INFO" doc:name="Logger"/>
+                <objectstore:store config-ref="ObjectStore" key="#[queueName]" value-ref="#[payload]" doc:name="saveQueue"/>
+            </catch-exception-strategy>
+        </choice-exception-strategy>
+    </flow>
+    <flow name="getQueueName">
+        <choice doc:name="Choice">
+            <when expression="#[message.inboundProperties['http.query.params'].get('queueName') != null]">
+                <set-variable variableName="queueName" value="#[message.inboundProperties['http.query.params'].get('queueName')]" doc:name="getQueueName"/>
+            </when>
+            <otherwise>
+                <set-variable variableName="queueName" value="1" doc:name="Variable"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="hackatonmuleappFlow2">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/addMovement" doc:name="/addMovement"/>
+        <set-variable variableName="movement" value="#[message.inboundProperties['http.query.params'].get('name')]" doc:name="getMovement"/>
+        <flow-ref name="getQueueName" doc:name="getQueueName"/>
+        <flow-ref name="getQueue" doc:name="getQueue"/>
+        <expression-component doc:name="addMovementToStack"><![CDATA[#[payload.add(movement)]]]></expression-component>
+        <logger level="INFO" doc:name="Logger" message="#['Added movement: '+movement]"/>
+        <logger message="#['Queue size: '+ payload.size()]" level="INFO" doc:name="Logger"/>
+        <objectstore:store config-ref="ObjectStore" key="#[queueName]" value-ref="#[payload]" overwrite="true" doc:name="saveQueue"/>
+        <set-payload value="uploaded!" doc:name="Set Payload"/>
+    </flow>
+    <flow name="hackatonmuleappFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/getMovement" allowedMethods="GET" doc:name="/getMovement"/>
+        <flow-ref name="getQueueName" doc:name="getQueueName"/>
+        <flow-ref name="getQueue" doc:name="getQueue"/>
+        <choice doc:name="Choice">
+            <when expression="#[payload.size() &gt; 0]">
+                <set-variable variableName="movement" value="#[payload.poll()]" doc:name="Variable"/>
+                <logger message="#['Sending '+movement+' movement']" level="INFO" doc:name="Logger"/>
+                <logger message="#['Actual queue size: '+payload.size()]" level="INFO" doc:name="Logger"/>
+                <objectstore:store config-ref="ObjectStore" key="#[queueName]" value-ref="#[payload]" overwrite="true" doc:name="saveQueue"/>
+                <set-payload value="#[flowVars.movement]" doc:name="Set Payload"/>
+            </when>
+            <otherwise>
+                <logger message="There are not more movements!" level="DEBUG" doc:name="Logger"/>
+                <set-payload value="#['']" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="hackatonmuleappFlow3">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/control" doc:name="/control"/>
+        <component class="hackatonmuleapp.OpenResource" doc:name="Java"/>
+    </flow>
+</mule>
